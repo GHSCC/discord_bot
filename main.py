@@ -16,15 +16,17 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith('$help'):
+    elif message.content.startswith('$help'):
         await message.channel.send('identifier $ ')
-        # TODO: finish this crap
 
-    if message.content.startswith('$register'):
+    elif message.content.startswith('$register'):
         for i in message.author.roles:
             if i.id == roles['Student']:
                 await message.channel.send("You already have the Student role. "
                                            "If you want to switch, message a moderator.")
+                return
+            elif i.id == roles['Advisor']:
+                await message.channel.send("You already have the advisor role")
                 return
 
         role = discord.utils.get(message.author.guild.roles, name="Student")
@@ -33,5 +35,18 @@ async def on_message(message):
             await message.channel.send(f'Student role given to {message.author}')
         except discord.Forbidden:
             await message.channel.send('I don\'t have the permission to do that, contact a moderator')
+
+    elif message.content.startswith('$check_assignment'):
+        await message.channel.send('Command has not been coded yet')
+
+    elif message.content.startswith('$submit_assignment'):
+        await message.channel.send('Command has not been coded yet')
+
+    elif message.content.startswith('$assign_assignment'):
+        await message.channel.send('Command has not been coded yet')
+
+    elif message.content.startswith('$assignment_progress'):
+        await message.channel.send('Command has not been coded yet')
+
 
 client.run(c.token)
