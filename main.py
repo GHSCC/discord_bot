@@ -1,5 +1,7 @@
 import discord
+from webserver import keep_alive
 import config as c
+import os
 
 client = discord.Client()
 roles = {'Student': 778053523187040297,
@@ -48,5 +50,5 @@ async def on_message(message):
     elif message.content.startswith('$assignment_progress'):
         await message.channel.send('Command has not been coded yet')
 
-
+keep_alive()
 client.run(c.token)
