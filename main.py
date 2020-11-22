@@ -1,6 +1,6 @@
 import discord
-import requests
 import json
+import requests
 from configparser import ConfigParser
 from os import listdir
 from os.path import isfile
@@ -12,6 +12,7 @@ token = config.get('data', 'token')
 StudentRole = config.getint('roles', 'StudentRole')
 AdvisorRole = config.getint('roles', 'AdvisorRole')
 AssignmentsPath = config.get('folders', 'assignmentsPath')
+SubmissionsPath = config.get('folders', 'submissionsPath')
 
 helpersPath = config.get('folders', 'HelpersPath')
 
@@ -78,30 +79,89 @@ async def on_message(message):
                     return
                 else:
                     # Downloading and saving the uploaded file
+                    for i in listdir(AssignmentsPath):
+                        if AssignmentsPath + i == AssignmentsPath + file.filename:
+                            await message.channel.send('the file already exist')
+                            return
+                    
                     r = requests.get(file.url)
-                    with open(AssignmentsPath+file.filename, 'w') as f:
-                        f.write(str(r.content))
+                    with open(AssignmentsPath + file.filename, 'w') as f:
+                        f.write(r.text)
                         f.close()
 
                     # updating the database
                     assignments['AssignmentFileName'] = file.filename
                     assignments['description'] = description
 
-                    await message.channel.send('the file has been downloaded and recorded in the database')
+                    await message.channel.send('the file has been uploaded and recorded in the database')
         else:
             await message.channel.send('Attach a text file!')
         with open('Database/assignments.json', 'w') as f:
             json.dump(assignments, f)
             f.close()
 
+    elif message.content.startswith('$assignment_progress'):
+        with open('Database/assignments.json', 'r') as f:
+            assignments = json.load(f)
+            f.close()
+
+        if len(assignments['submissions']) < 1:
+            await message.channel.send('No one have submitted the assignment!, Idiots')
+            return
+        text = ""
+        for username in assignments['submissions']:
+            text += username + '\n'
+        await message.channel.send(f'The following users have submitted the assignment \n {text}')
+
     elif message.content.startswith('$submit_assignment'):
-        await message.channel.send('Command has not been coded yet')
+        with open('Database/assignments.json', 'r') as f:
+            assignments = json.load(f)
+            f.close()
+
+        if len(message.attachments) > 0:
+            for file in message.attachments:
+                if '.txt' not in file.filename:
+                    await message.channel.send('Send a .txt file!')
+                    return
+                else:
+                    # Downloading and saving the uploaded file
+                    for i in listdir(SubmissionsPath):
+                        if SubmissionsPath + i == SubmissionsPath + file.filename:
+                            await message.channel.send(
+                                'a file with the same name already exists, use a different filename please')
+                            return
+
+                    r = requests.get(file.url)
+                    with open(SubmissionsPath + file.filename, 'w') as f:
+                        f.write(r.text)
+                        f.close()
+
+                    # updating the database
+                    username = message.author.display_name
+                    if username not in assignments['submissions']:
+                        assignments['submissions'][username] = file.filename
+                        await message.channel.send('the file has been uploaded and recorded in the database')
+                    else:
+                        await message.channel.send('You have already submitted a file!')
+
+        else:
+            await message.channel.send('Attach a text file!')
+        with open('Database/assignments.json', 'w') as f:
+            json.dump(assignments, f)
+            f.close()
 
     elif message.content.startswith('$check_assignment'):
-        await message.channel.send('Command has not been coded yet')
+        with open('Database/assignments.json', 'r') as f:
+            assignments = json.load(f)
+            f.close()
 
-    elif message.content.startswith('$assignment_progress'):
-        await message.channel.send('Command has not been coded yet')
+        for i in assignments['submissions']:
+            if i == message.author.display_name:
+                await message.channel.send("You don't have an assignment waiting for you!")
+                return
+
+        await message.channel.send('You have one assignment!')
+        await message.channel.send(file=discord.File(AssignmentsPath+assignments['AssignmentFileName']))
 
 
 client.run(token)
