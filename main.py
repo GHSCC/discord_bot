@@ -1,21 +1,10 @@
 import discord
-import json
 import requests
-from configparser import ConfigParser
+from Database import helpers
 from os import listdir
-from os.path import isfile
 
-config = ConfigParser()
-config.read('config.ini')
 
-token = config.get('data', 'token')
-StudentRole = config.getint('roles', 'StudentRole')
-AdvisorRole = config.getint('roles', 'AdvisorRole')
-AssignmentsPath = config.get('folders', 'assignmentsPath')
-SubmissionsPath = config.get('folders', 'submissionsPath')
-
-helpersPath = config.get('folders', 'HelpersPath')
-
+config = helpers.getConfig()
 client = discord.Client()
 
 
@@ -30,28 +19,19 @@ async def on_message(message):
         return
 
     elif message.content.startswith('$help'):
-        files = {}
-        for i in listdir(helpersPath):
-            if isfile(helpersPath + i):
-                with open(helpersPath + i, 'r') as f:
-                    files[i] = f.read()
-                    f.close()
-        for i in message.author.roles:
-            if i.id == StudentRole:
-                text = files['StudentCommands.txt']
-                await message.channel.send(f'```{text}```')
 
-            elif i.id == AdvisorRole:
-                text = files['AdvisorCommands.txt']
+        for i in message.author.roles:
+            text = helpers.getHelpFile(i.id)
+            if text:
                 await message.channel.send(f'```{text}```')
 
     elif message.content.startswith('$register'):
         for i in message.author.roles:
-            if i.id == StudentRole:
+            if i.id == config['StudentRole']:
                 await message.channel.send("You already have the Student role. "
                                            "If you want to switch, message a moderator.")
                 return
-            elif i.id == AdvisorRole:
+            elif i.id == config['AdvisorRole']:
                 await message.channel.send("You already have the advisor role")
                 return
 
@@ -63,9 +43,7 @@ async def on_message(message):
             await message.channel.send('I don\'t have the permission to do that, contact a moderator')
 
     elif message.content.startswith('$assign_assignment'):
-        with open('Database/assignments.json', 'r') as f:
-            assignments = json.load(f)
-            f.close()
+        assignments = helpers.load_assignments()
 
         if len(message.attachments) > 0:
             description = message.content[18:]
@@ -79,13 +57,13 @@ async def on_message(message):
                     return
                 else:
                     # Downloading and saving the uploaded file
-                    for i in listdir(AssignmentsPath):
-                        if AssignmentsPath + i == AssignmentsPath + file.filename:
+                    for i in listdir(config['AssignmentsPath']):
+                        if config['AssignmentsPath'] + i == config['AssignmentsPath'] + file.filename:
                             await message.channel.send('the file already exist')
                             return
-                    
+
                     r = requests.get(file.url)
-                    with open(AssignmentsPath + file.filename, 'w') as f:
+                    with open(config['AssignmentsPath'] + file.filename, 'w') as f:
                         f.write(r.text)
                         f.close()
 
@@ -96,14 +74,11 @@ async def on_message(message):
                     await message.channel.send('the file has been uploaded and recorded in the database')
         else:
             await message.channel.send('Attach a text file!')
-        with open('Database/assignments.json', 'w') as f:
-            json.dump(assignments, f)
-            f.close()
+
+        helpers.save_assignments(assignments)
 
     elif message.content.startswith('$assignment_progress'):
-        with open('Database/assignments.json', 'r') as f:
-            assignments = json.load(f)
-            f.close()
+        assignments = helpers.load_assignments()
 
         if len(assignments['submissions']) < 1:
             await message.channel.send('No one have submitted the assignment!, Idiots')
@@ -114,9 +89,7 @@ async def on_message(message):
         await message.channel.send(f'The following users have submitted the assignment \n {text}')
 
     elif message.content.startswith('$submit_assignment'):
-        with open('Database/assignments.json', 'r') as f:
-            assignments = json.load(f)
-            f.close()
+        assignments = helpers.load_assignments()
 
         if len(message.attachments) > 0:
             for file in message.attachments:
@@ -125,14 +98,14 @@ async def on_message(message):
                     return
                 else:
                     # Downloading and saving the uploaded file
-                    for i in listdir(SubmissionsPath):
-                        if SubmissionsPath + i == SubmissionsPath + file.filename:
+                    for i in listdir(config['SubmissionsPath']):
+                        if config['SubmissionsPath'] + i == config['SubmissionsPath'] + file.filename:
                             await message.channel.send(
                                 'a file with the same name already exists, use a different filename please')
                             return
 
                     r = requests.get(file.url)
-                    with open(SubmissionsPath + file.filename, 'w') as f:
+                    with open(config['SubmissionsPath'] + file.filename, 'w') as f:
                         f.write(r.text)
                         f.close()
 
@@ -146,14 +119,10 @@ async def on_message(message):
 
         else:
             await message.channel.send('Attach a text file!')
-        with open('Database/assignments.json', 'w') as f:
-            json.dump(assignments, f)
-            f.close()
+        helpers.save_assignments(assignments)
 
     elif message.content.startswith('$check_assignment'):
-        with open('Database/assignments.json', 'r') as f:
-            assignments = json.load(f)
-            f.close()
+        assignments = helpers.load_assignments()
 
         for i in assignments['submissions']:
             if i == message.author.display_name:
@@ -161,7 +130,7 @@ async def on_message(message):
                 return
 
         await message.channel.send('You have one assignment!')
-        await message.channel.send(file=discord.File(AssignmentsPath+assignments['AssignmentFileName']))
+        await message.channel.send(file=discord.File(config['AssignmentsPath'] + assignments['AssignmentFileName']))
 
 
-client.run(token)
+client.run(config['token'])
