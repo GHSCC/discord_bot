@@ -2,6 +2,7 @@ import discord
 import requests
 from Database import helpers
 from os import listdir
+import datetime
 
 
 config = helpers.getConfig()
@@ -12,11 +13,39 @@ client = discord.Client()
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
 
+meeting = {}
 
 @client.event
 async def on_message(message):
+    user = message.author
     if message.author == client.user:
         return
+
+    elif message.content.startswith('$startmeeting'):
+        bool = False
+        for i in user.roles:
+            elif i.id == config['AdvisorRole']:
+                bool = True
+        if bool:
+            meeting["start_time"] = datetime.datetime.now()
+        else:
+            await message.channel.send("You need to have the advisor role")
+
+    #still working on this
+    elif message.content.startswith('$joinmeeting'):
+            meeting["start_time"] = datetime.datetime.now()
+    
+    #still working on this
+    elif message.content.startswith('$endmeeting'):
+        bool = False
+        for i in message.author.roles:
+            elif i.id == config['AdvisorRole']:
+                bool = True
+        if bool:
+            meeting["start_time"] = datetime.datetime.now()
+        else:
+            await message.channel.send("You need to have the advisor role")
+
 
     elif message.content.startswith('$help'):
 
