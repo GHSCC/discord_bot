@@ -24,31 +24,35 @@ async def on_message(message):
     elif message.content.startswith('$startmeeting'):
         bool = False
         for i in user.roles:
-            elif i.id == config['AdvisorRole']:
+            if i.id == config['AdvisorRole']:
                 bool = True
         if bool:
             meeting["start_time"] = datetime.datetime.now()
+            meeting["attendants"] = {user.id:[datetime.datetime.now(),user.name]}
+            await message.channel.send(user.name+" has started the meeting")
         else:
             await message.channel.send("You need to have the advisor role")
 
     #still working on this
     elif message.content.startswith('$joinmeeting'):
-            meeting["start_time"] = datetime.datetime.now()
-    
+        if user.id not in meeting["attendants"]:
+            meeting["attendants"][user.id] = [datetime.datetime.now(),user.name]
+            await message.channel.send(user.name+" joined the meeting")
+        else:
+            await message.channel.send("You're already in the meeting")
+
     #still working on this
     elif message.content.startswith('$endmeeting'):
         bool = False
-        for i in message.author.roles:
-            elif i.id == config['AdvisorRole']:
+        for i in user.roles:
+            if i.id == config['AdvisorRole']:
                 bool = True
         if bool:
-            meeting["start_time"] = datetime.datetime.now()
-        else:
-            await message.channel.send("You need to have the advisor role")
-
+            end_time = datetime.datetime.now()
+            for user_id in meeting["attendants"]:
+                await message.channel.send(meeting["attendants"][user_id][1]+" stayed in the meeting for "+str(datetime.timedelta(seconds=int((end_time-meeting["attendants"][user_id][0]).total_seconds()))))
 
     elif message.content.startswith('$help'):
-
         for i in message.author.roles:
             text = helpers.getHelpFile(i.id)
             if text:
@@ -160,6 +164,5 @@ async def on_message(message):
 
         await message.channel.send('You have one assignment!')
         await message.channel.send(file=discord.File(config['AssignmentsPath'] + assignments['AssignmentFileName']))
-
 
 client.run(config['token'])
