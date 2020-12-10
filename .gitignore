@@ -135,4 +135,4 @@ dmypy.json
 .idea/modules.xml
 .idea/vcs.xml
 
-config.py
+config.ini

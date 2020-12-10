@@ -1,6 +1,6 @@
 Student Commands
-$register          : signs the discord user up for the class
-$check_assignment  : tells the student whether or not there is a current assignment if there is, sends the assignment\'s info
-$submit_assignment : used by the students to submit their answer to the assignment
-$check_in          : used to check into a meeting
-$get_question      : gets a random question within the questions that the Advisors have put in for the week
+.register          : signs the discord user up for the class
+.check_assignment  : tells the student whether or not there is a current assignment if there is, sends the assignment\'s info
+.submit_assignment : used by the students to submit their answer to the assignment
+.check_in          : used to check into a meeting
+.get_question      : gets a random question within the questions that the Advisors have put in for the week

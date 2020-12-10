@@ -2,7 +2,7 @@ import discord
 import requests
 from Database import helpers
 from os import listdir
-
+import datetime
 
 config = helpers.getConfig()
 client = discord.Client()
@@ -13,19 +13,22 @@ async def on_ready():
     print('We have logged in as {0.user}'.format(client))
 
 
+meeting = {}
+
+
 @client.event
 async def on_message(message):
+    user = message.author
     if message.author == client.user:
         return
 
-    elif message.content.startswith('$help'):
-
+    elif message.content.startswith('.help'):
         for i in message.author.roles:
             text = helpers.getHelpFile(i.id)
             if text:
                 await message.channel.send(f'```{text}```')
 
-    elif message.content.startswith('$register'):
+    elif message.content.startswith('.register'):
         for i in message.author.roles:
             if i.id == config['StudentRole']:
                 await message.channel.send("You already have the Student role. "
@@ -42,7 +45,7 @@ async def on_message(message):
         except discord.Forbidden:
             await message.channel.send('I don\'t have the permission to do that, contact a moderator')
 
-    elif message.content.startswith('$assign_assignment'):
+    elif message.content.startswith('.assign_assignment'):
         assignments = helpers.load_assignments()
 
         if len(message.attachments) > 0:
@@ -50,7 +53,7 @@ async def on_message(message):
             for file in message.attachments:
                 if len(description) < 1:
                     await message.channel.send('Please provide a description \n'
-                                               '$assign_assignment [description]')
+                                               '.assign_assignment [description]')
                     return
                 elif '.txt' not in file.filename:
                     await message.channel.send('Send a .txt file!')
@@ -77,7 +80,7 @@ async def on_message(message):
 
         helpers.save_assignments(assignments)
 
-    elif message.content.startswith('$assignment_progress'):
+    elif message.content.startswith('.assignment_progress'):
         assignments = helpers.load_assignments()
 
         if len(assignments['submissions']) < 1:
@@ -88,7 +91,7 @@ async def on_message(message):
             text += username + '\n'
         await message.channel.send(f'The following users have submitted the assignment \n {text}')
 
-    elif message.content.startswith('$submit_assignment'):
+    elif message.content.startswith('.submit_assignment'):
         assignments = helpers.load_assignments()
 
         if len(message.attachments) > 0:
@@ -121,7 +124,7 @@ async def on_message(message):
             await message.channel.send('Attach a text file!')
         helpers.save_assignments(assignments)
 
-    elif message.content.startswith('$check_assignment'):
+    elif message.content.startswith('.check_assignment'):
         assignments = helpers.load_assignments()
 
         for i in assignments['submissions']:
@@ -131,6 +134,40 @@ async def on_message(message):
 
         await message.channel.send('You have one assignment!')
         await message.channel.send(file=discord.File(config['AssignmentsPath'] + assignments['AssignmentFileName']))
+
+    elif message.content.startswith('.startmeeting'):
+        breaker = False
+        for i in user.roles:
+            if i.id == config['AdvisorRole']:
+                breaker = True
+        if breaker:
+            meeting["start_time"] = datetime.datetime.now()
+            meeting["attendants"] = {user.id: [datetime.datetime.now(), user.name]}
+            await message.channel.send(user.name + " has started the meeting")
+        else:
+            await message.channel.send("You need to have the advisor role")
+
+    # still working on this
+    elif message.content.startswith('.joinmeeting'):
+        if user.id not in meeting["attendants"]:
+            meeting["attendants"][user.id] = [datetime.datetime.now(), user.name]
+            await message.channel.send(user.name + " joined the meeting")
+        else:
+            await message.channel.send("You're already in the meeting")
+
+    # still working on this
+    elif message.content.startswith('.endmeeting'):
+        breaker = False
+        for i in user.roles:
+            if i.id == config['AdvisorRole']:
+                breaker = True
+        if breaker:
+            end_time = datetime.datetime.now()
+            for user_id in meeting["attendants"]:
+                time = str(datetime.timedelta(
+                    seconds=int((end_time - meeting["attendants"][user_id][0]).total_seconds())
+                        ))
+                await message.channel.send(f"{meeting['attendants'][user_id][1]} stayed in the meeting for {time}")
 
 
 client.run(config['token'])
