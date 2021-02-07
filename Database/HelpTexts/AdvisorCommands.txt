@@ -1,7 +1,6 @@
 Advisor Commands
-$assign_assignment   : used by the advisors to give assignments to the students role
-$assignment_progress : used by the mods to check on what each student has submitted as their answer
-$start_meeting       : starts a meeting and allows the students to join in
-$end_meeting         : ends a meeting recording the time that all the students stayed within the meeting
-$check_meetings      : returns a previous meetings that have occured and the students that attended them.
-$add_question        : adds a question into the question bank, the question bank will be renewed every single week
+.assignassignment   : used by the advisors to give assignments to the students role
+.assignmentprogress : used by the mods to check on what each student has submitted as their answer
+.start_meeting       : starts a meeting and allows the students to join in
+.end_meeting         : ends a meeting recording the time that all the students stayed within the meeting
+.add_question        : adds a question into the question bank, the question bank will be renewed every single week

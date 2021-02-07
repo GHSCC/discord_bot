@@ -28,6 +28,9 @@ async def on_message(message):
             if text:
                 await message.channel.send(f'```{text}```')
 
+    elif message.content.startswith('.ping'):
+        await message.channel.send(f'leave me alone')
+
     elif message.content.startswith('.register'):
         for i in message.author.roles:
             if i.id == config['StudentRole']:
@@ -135,7 +138,8 @@ async def on_message(message):
         await message.channel.send('You have one assignment!')
         await message.channel.send(file=discord.File(config['AssignmentsPath'] + assignments['AssignmentFileName']))
 
-    elif message.content.startswith('.startmeeting'):
+    elif message.content.startswith('.start_meeting'):
+        print("i am in")
         breaker = False
         for i in user.roles:
             if i.id == config['AdvisorRole']:
@@ -148,7 +152,7 @@ async def on_message(message):
             await message.channel.send("You need to have the advisor role")
 
     # still working on this
-    elif message.content.startswith('.joinmeeting'):
+    elif message.content.startswith('.join_meeting'):
         if user.id not in meeting["attendants"]:
             meeting["attendants"][user.id] = [datetime.datetime.now(), user.name]
             await message.channel.send(user.name + " joined the meeting")
@@ -156,7 +160,7 @@ async def on_message(message):
             await message.channel.send("You're already in the meeting")
 
     # still working on this
-    elif message.content.startswith('.endmeeting'):
+    elif message.content.startswith('.end_meeting'):
         breaker = False
         for i in user.roles:
             if i.id == config['AdvisorRole']:
@@ -166,8 +170,21 @@ async def on_message(message):
             for user_id in meeting["attendants"]:
                 time = str(datetime.timedelta(
                     seconds=int((end_time - meeting["attendants"][user_id][0]).total_seconds())
-                        ))
+                ))
                 await message.channel.send(f"{meeting['attendants'][user_id][1]} stayed in the meeting for {time}")
 
+    elif message.content.startswith('.add_question'):
+        allow = False
+        for i in message.author.roles:
+            if i.id != config['AdvisorRole']:
+                allow = True
+        if allow:
+            question = message.content[14:]
+            helpers.add_question(question)
+            await message.channel.send(f'"{question}" has been added to the database')
+
+    elif message.content.startswith('.get_question'):
+        question = helpers.get_question(user.id)
+        await message.channel.send(f"```{question}```")
 
 client.run(config['token'])
